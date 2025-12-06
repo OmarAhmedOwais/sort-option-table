@@ -1,16 +1,19 @@
+@if (productsState$ | async; as state) {
 <div class="p-4">
   <h1 class="text-2xl font-bold mb-4">Products</h1>
 
-  @if (loading) {
+  @if (state.error) {
+  <p class="text-red-500">{{ state.error }}</p>
+  } @if (state.loading) {
   <p>Loading products...</p>
   }
 
   <p-table
-    [value]="products"
+    [value]="state.products"
     [paginator]="true"
     [rows]="5"
     [rowsPerPageOptions]="[5, 10, 20]"
-    [loading]="loading"
+    [loading]="state.loading"
     [tableStyle]="{ 'min-width': '60rem' }"
   >
     <ng-template #header>
@@ -62,3 +65,4 @@
     </ng-template>
   </p-table>
 </div>
+}

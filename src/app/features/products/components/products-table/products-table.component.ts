@@ -1,8 +1,15 @@
-import { Component, inject, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser, CommonModule } from '@angular/common';
 import { TableModule } from 'primeng/table';
-import { Product } from '../../models/product.model';
 import { ProductsService } from '../../services/products.service';
+import { Observable, of, startWith, catchError, map } from 'rxjs';
+import { Product } from '../../models/product.model';
+
+interface ProductsState {
+  products: Product[];
+  loading: boolean;
+  error: string | null;
+}
 
 @Component({
   selector: 'app-products-table',
@@ -10,32 +17,18 @@ import { ProductsService } from '../../services/products.service';
   imports: [TableModule, CommonModule],
   templateUrl: './products-table.component.html',
 })
-export class ProductsTableComponent implements OnInit {
+export class ProductsTableComponent {
   private productsService = inject(ProductsService);
   private platformId = inject(PLATFORM_ID);
 
-  products: Product[] = [];
-  loading = true;
-
-  ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.loadProducts();
-    } else {
-      this.loading = false;
-    }
-  }
-
-  loadProducts(): void {
-    this.loading = true;
-    this.productsService.getProducts().subscribe({
-      next: (data) => {
-        this.products = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load products', err);
-        this.loading = false;
-      },
-    });
-  }
+  readonly productsState$: Observable<ProductsState> = isPlatformBrowser(this.platformId)
+    ? this.productsService.getProducts().pipe(
+        map((products) => ({ products, loading: false, error: null })),
+        startWith({ products: [], loading: true, error: null }),
+        catchError((err) => {
+          console.error('Failed to load products', err);
+          return of({ products: [], loading: false, error: 'Failed to load products' });
+        })
+      )
+    : of({ products: [], loading: false, error: null });
 }
