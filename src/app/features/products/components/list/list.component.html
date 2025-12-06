@@ -10,7 +10,7 @@
   <div class="flex justify-end mb-4">
     <app-search-input
       [placeholder]="'Search products...'"
-      [debounceTime]="300"
+      [debounceMs]="300"
       [value]="state.search"
       (searchChange)="onSearch($event)"
     />
