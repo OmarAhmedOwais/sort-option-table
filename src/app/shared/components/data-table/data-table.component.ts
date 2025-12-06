@@ -2,11 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TableModule, TableLazyLoadEvent } from 'primeng/table';
 import { TableColumn } from '../../models/table-column.model';
-
-export interface SortEvent {
-  field: string;
-  order: 'asc' | 'desc';
-}
+import { SortEvent } from '../../models/sort-event.model';
 
 @Component({
   selector: 'app-data-table',

@@ -1,16 +1,30 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ProductsResponse, ProductsQueryParams } from '../models/product.model';
+import { API_CONFIG } from '../../../core';
+import { ProductsResponse, ProductsQueryParams } from '../models';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ProductsService {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = 'https://dummyjson.com/products';
+  private readonly baseUrl = API_CONFIG.baseUrl;
+  private readonly endpoints = API_CONFIG.endpoints;
 
   getProducts(params?: ProductsQueryParams): Observable<ProductsResponse> {
+    const httpParams = this.buildHttpParams(params);
+    const url = this.getProductsUrl(params?.search);
+
+    return this.http.get<ProductsResponse>(url, { params: httpParams });
+  }
+
+  private getProductsUrl(search?: string): string {
+    const endpoint = search ? this.endpoints.productsSearch : this.endpoints.products;
+    return `${this.baseUrl}${endpoint}`;
+  }
+
+  private buildHttpParams(params?: ProductsQueryParams): HttpParams {
     let httpParams = new HttpParams();
     const limit = params?.limit ?? 10;
     const page = params?.page ?? 1;
@@ -24,15 +38,10 @@ export class ProductsService {
       httpParams = httpParams.set('order', params.sortOrder ?? 'asc');
     }
 
-    // Use search endpoint if search query is provided
-    const url = params?.search
-      ? `${this.baseUrl}/search`
-      : this.baseUrl;
-
     if (params?.search) {
       httpParams = httpParams.set('q', params.search);
     }
 
-    return this.http.get<ProductsResponse>(url, { params: httpParams });
+    return httpParams;
   }
 }

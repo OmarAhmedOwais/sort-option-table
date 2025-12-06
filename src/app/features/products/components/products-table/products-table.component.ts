@@ -1,22 +1,17 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ProductsService } from '../../services/products.service';
 import { of, switchMap, catchError, map, startWith, debounceTime, distinctUntilChanged } from 'rxjs';
-import { Product, ProductsQueryParams } from '../../models/product.model';
-import { DataTableComponent, SearchInputComponent, TableColumn, SortEvent } from '../../../../shared';
 
-interface ProductsState {
-  products: Product[];
-  loading: boolean;
-  error: string | null;
-  totalRecords: number;
-  page: number;
-  rows: number;
-  search: string;
-  sortBy: string;
-  sortOrder: 'asc' | 'desc';
-}
+import { ProductsService } from '../../services/products.service';
+import {
+  ProductsQueryParams,
+  ProductsState,
+  initialProductsState,
+  errorProductsState,
+  PRODUCTS_TABLE_COLUMNS,
+} from '../../models';
+import { DataTableComponent, SearchInputComponent, SortEvent } from '../../../../shared';
 
 @Component({
   selector: 'app-products-table',
@@ -29,16 +24,7 @@ export class ProductsTableComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  readonly columns: TableColumn[] = [
-    { field: 'id', header: 'ID', sortable: true, width: '8%' },
-    { field: 'title', header: 'Title', sortable: true, width: '25%' },
-    { field: 'price', header: 'Price', sortable: true, width: '12%', type: 'currency' },
-    { field: 'category', header: 'Category', sortable: true, width: '15%' },
-    { field: 'brand', header: 'Brand', sortable: true, width: '12%' },
-    { field: 'rating', header: 'Rating', sortable: true, width: '10%', type: 'rating' },
-    { field: 'thumbnail', header: 'Image', sortable: false, width: '18%', type: 'image' },
-  ];
-
+  readonly columns = PRODUCTS_TABLE_COLUMNS;
   initialSearch = '';
 
   readonly productsState$ = this.route.queryParams.pipe(
@@ -49,7 +35,7 @@ export class ProductsTableComponent implements OnInit {
       limit: params['limit'] ? +params['limit'] : 10,
       search: params['search'] || undefined,
       sortBy: params['sortBy'] || undefined,
-      sortOrder: params['sortOrder'] as 'asc' | 'desc' || undefined,
+      sortOrder: (params['sortOrder'] as 'asc' | 'desc') || undefined,
     })),
     switchMap((params) =>
       this.productsService.getProducts(params).pipe(
@@ -64,30 +50,10 @@ export class ProductsTableComponent implements OnInit {
           sortBy: params.sortBy || '',
           sortOrder: params.sortOrder || 'asc',
         })),
-        startWith<ProductsState>({
-          products: [],
-          loading: true,
-          error: null,
-          totalRecords: 0,
-          page: params.page ?? 1,
-          rows: params.limit ?? 10,
-          search: params.search || '',
-          sortBy: params.sortBy || '',
-          sortOrder: params.sortOrder || 'asc',
-        }),
-        catchError((err): import('rxjs').Observable<ProductsState> => {
+        startWith<ProductsState>(initialProductsState(params)),
+        catchError((err) => {
           console.error('Failed to load products', err);
-          return of({
-            products: [],
-            loading: false,
-            error: 'Failed to load products',
-            totalRecords: 0,
-            page: params.page ?? 1,
-            rows: params.limit ?? 10,
-            search: params.search || '',
-            sortBy: params.sortBy || '',
-            sortOrder: params.sortOrder || 'asc',
-          });
+          return of(errorProductsState(params));
         })
       )
     )
@@ -99,9 +65,10 @@ export class ProductsTableComponent implements OnInit {
   }
 
   onPageChange(event: { page: number; rows: number }): void {
-    const currentLimit = this.route.snapshot.queryParams['limit'] ? +this.route.snapshot.queryParams['limit'] : 10;
-    
-    // Only include limit if it actually changed
+    const currentLimit = this.route.snapshot.queryParams['limit']
+      ? +this.route.snapshot.queryParams['limit']
+      : 10;
+
     if (event.rows === currentLimit) {
       this.updateQueryParams({ page: event.page });
     } else {

@@ -15,40 +15,31 @@ export interface Product {
   warrantyInformation: string;
   shippingInformation: string;
   availabilityStatus: string;
-  reviews: {
-    rating: number;
-    comment: string;
-    date: string;
-    reviewerName: string;
-    reviewerEmail: string;
-  }[];
+  reviews: ProductReview[];
   returnPolicy: string;
   minimumOrderQuantity: number;
-  meta: {
-    createdAt: string;
-    updatedAt: string;
-    barcode: string;
-    qrCode: string;
-  };
-  dimensions: {
-    width: number;
-    height: number;
-    depth: number;
-  };
+  meta: ProductMeta;
+  dimensions: ProductDimensions;
   tags: string[];
 }
 
-export interface ProductsResponse {
-  products: Product[];
-  total: number;
-  skip: number;
-  limit: number;
+export interface ProductReview {
+  rating: number;
+  comment: string;
+  date: string;
+  reviewerName: string;
+  reviewerEmail: string;
 }
 
-export interface ProductsQueryParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
+export interface ProductMeta {
+  createdAt: string;
+  updatedAt: string;
+  barcode: string;
+  qrCode: string;
+}
+
+export interface ProductDimensions {
+  width: number;
+  height: number;
+  depth: number;
 }
