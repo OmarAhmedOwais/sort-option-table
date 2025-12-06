@@ -30,16 +30,27 @@ export class DataTableComponent<T> {
   pageChange = output<{ page: number; rows: number }>();
   sortChange = output<SortEvent>();
 
-  onLazyLoad(event: TableLazyLoadEvent): void {
-    // Handle pagination
-    const page = Math.floor((event.first ?? 0) / (event.rows ?? 10)) + 1;
-    this.pageChange.emit({ page, rows: event.rows ?? 10 });
+  private lastSortField: string | null = null;
+  private lastSortOrder: number | null = null;
 
-    // Handle sorting
+  onLazyLoad(event: TableLazyLoadEvent): void {
+    const currentRows = this.rows();
+    const eventRows = event.rows ?? currentRows;
+    const page = Math.floor((event.first ?? 0) / eventRows) + 1;
+
+    // Only emit page change (rows only changes when user explicitly changes it via dropdown)
+    this.pageChange.emit({ page, rows: eventRows });
+
+    // Handle sorting - only emit if sort actually changed
     if (event.sortField) {
       const field = Array.isArray(event.sortField) ? event.sortField[0] : event.sortField;
       const order = event.sortOrder === 1 ? 'asc' : 'desc';
-      this.sortChange.emit({ field, order });
+      
+      if (field !== this.lastSortField || event.sortOrder !== this.lastSortOrder) {
+        this.lastSortField = field;
+        this.lastSortOrder = event.sortOrder ?? null;
+        this.sortChange.emit({ field, order });
+      }
     }
   }
 

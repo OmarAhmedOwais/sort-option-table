@@ -59,7 +59,7 @@ export class ProductsTableComponent implements OnInit {
           error: null,
           totalRecords: response.total,
           page: params.page ?? 1,
-          rows: response.limit,
+          rows: params.limit ?? 10,
           search: params.search || '',
           sortBy: params.sortBy || '',
           sortOrder: params.sortOrder || 'asc',
@@ -99,7 +99,14 @@ export class ProductsTableComponent implements OnInit {
   }
 
   onPageChange(event: { page: number; rows: number }): void {
-    this.updateQueryParams({ page: event.page, limit: event.rows });
+    const currentLimit = this.route.snapshot.queryParams['limit'] ? +this.route.snapshot.queryParams['limit'] : 10;
+    
+    // Only include limit if it actually changed
+    if (event.rows === currentLimit) {
+      this.updateQueryParams({ page: event.page });
+    } else {
+      this.updateQueryParams({ page: event.page, limit: event.rows });
+    }
   }
 
   onSearch(search: string): void {

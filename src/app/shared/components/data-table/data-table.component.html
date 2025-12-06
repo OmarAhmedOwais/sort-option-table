@@ -10,6 +10,9 @@
   [first]="first()"
   [sortField]="sortField()"
   [sortOrder]="getSortOrder()"
+  [showCurrentPageReport]="true"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  paginatorDropdownAppendTo="body"
   (onLazyLoad)="onLazyLoad($event)"
 >
   <ng-template #header>
