@@ -1,0 +1,44 @@
+<p-table
+  [value]="data()"
+  [paginator]="paginator()"
+  [rows]="rows()"
+  [rowsPerPageOptions]="rowsPerPageOptions()"
+  [loading]="loading()"
+  [tableStyle]="{ 'min-width': '60rem' }"
+>
+  <ng-template #header>
+    <tr>
+      @for (col of columns(); track col.field) { @if (col.sortable) {
+      <th [pSortableColumn]="col.field" [style.width]="col.width">
+        <div class="flex items-center gap-2">
+          {{ col.header }}
+          <p-sortIcon [field]="col.field" />
+        </div>
+      </th>
+      } @else {
+      <th [style.width]="col.width">{{ col.header }}</th>
+      } }
+    </tr>
+  </ng-template>
+  <ng-template #body let-item>
+    <tr>
+      @for (col of columns(); track col.field) {
+      <td>
+        @switch (col.type) { @case ('currency') {
+        {{ getNestedValue(item, col.field) | currency }}
+        } @case ('image') {
+        <img
+          [src]="getNestedValue(item, col.field)"
+          [alt]="item.title || 'Image'"
+          class="w-16 h-16 object-contain"
+        />
+        } @case ('rating') {
+        {{ getNestedValue(item, col.field) }}
+        @if (item.rating?.count !== undefined) { ({{ item.rating.count }}) } } @default {
+        {{ getNestedValue(item, col.field) }}
+        } }
+      </td>
+      }
+    </tr>
+  </ng-template>
+</p-table>
