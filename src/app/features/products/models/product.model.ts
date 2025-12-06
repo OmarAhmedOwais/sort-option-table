@@ -6,34 +6,49 @@ export interface Product {
   category: string;
   brand: string;
   stock: number;
-  image: string;
-  specs: {
-    color: string;
-    weight: string;
-    storage: string;
+  thumbnail: string;
+  images: string[];
+  discountPercentage: number;
+  rating: number;
+  sku: string;
+  weight: number;
+  warrantyInformation: string;
+  shippingInformation: string;
+  availabilityStatus: string;
+  reviews: {
+    rating: number;
+    comment: string;
+    date: string;
+    reviewerName: string;
+    reviewerEmail: string;
+  }[];
+  returnPolicy: string;
+  minimumOrderQuantity: number;
+  meta: {
+    createdAt: string;
+    updatedAt: string;
+    barcode: string;
+    qrCode: string;
   };
-  rating: {
-    rate: number;
-    count: number;
+  dimensions: {
+    width: number;
+    height: number;
+    depth: number;
   };
+  tags: string[];
 }
 
 export interface ProductsResponse {
-  data: Product[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-  };
+  products: Product[];
+  total: number;
+  skip: number;
+  limit: number;
 }
 
 export interface ProductsQueryParams {
   page?: number;
   limit?: number;
-  category?: string;
   search?: string;
-  price?: {
-    min?: number;
-    max?: number;
-  };
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
 }

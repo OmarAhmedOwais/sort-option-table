@@ -8,7 +8,9 @@
   [totalRecords]="totalRecords()"
   [lazy]="lazy()"
   [first]="first()"
-  (onPage)="onPageChange($event)"
+  [sortField]="sortField()"
+  [sortOrder]="getSortOrder()"
+  (onLazyLoad)="onLazyLoad($event)"
 >
   <ng-template #header>
     <tr>
@@ -37,8 +39,11 @@
           class="w-16 h-16 object-contain"
         />
         } @case ('rating') {
-        {{ getNestedValue(item, col.field) }}
-        @if (item.rating?.count !== undefined) { ({{ item.rating.count }}) } } @default {
+        <span class="flex items-center gap-1">
+          <i class="pi pi-star-fill text-yellow-500"></i>
+          {{ getNestedValue(item, col.field) | number:'1.1-1' }}
+        </span>
+        } @default {
         {{ getNestedValue(item, col.field) }}
         } }
       </td>

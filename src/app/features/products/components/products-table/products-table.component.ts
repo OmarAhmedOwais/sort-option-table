@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { ProductsService } from '../../services/products.service';
 import { of, switchMap, catchError, map, startWith, debounceTime, distinctUntilChanged } from 'rxjs';
 import { Product, ProductsQueryParams } from '../../models/product.model';
-import { DataTableComponent, SearchInputComponent, TableColumn } from '../../../../shared';
+import { DataTableComponent, SearchInputComponent, TableColumn, SortEvent } from '../../../../shared';
 
 interface ProductsState {
   products: Product[];
@@ -14,6 +14,8 @@ interface ProductsState {
   page: number;
   rows: number;
   search: string;
+  sortBy: string;
+  sortOrder: 'asc' | 'desc';
 }
 
 @Component({
@@ -28,12 +30,13 @@ export class ProductsTableComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   readonly columns: TableColumn[] = [
-    { field: 'id', header: 'ID', sortable: true, width: '10%' },
+    { field: 'id', header: 'ID', sortable: true, width: '8%' },
     { field: 'title', header: 'Title', sortable: true, width: '25%' },
-    { field: 'price', header: 'Price', sortable: true, width: '15%', type: 'currency' },
+    { field: 'price', header: 'Price', sortable: true, width: '12%', type: 'currency' },
     { field: 'category', header: 'Category', sortable: true, width: '15%' },
-    { field: 'rating.rate', header: 'Rating', sortable: true, width: '10%', type: 'rating' },
-    { field: 'image', header: 'Image', sortable: false, width: '25%', type: 'image' },
+    { field: 'brand', header: 'Brand', sortable: true, width: '12%' },
+    { field: 'rating', header: 'Rating', sortable: true, width: '10%', type: 'rating' },
+    { field: 'thumbnail', header: 'Image', sortable: false, width: '18%', type: 'image' },
   ];
 
   initialSearch = '';
@@ -45,17 +48,21 @@ export class ProductsTableComponent implements OnInit {
       page: params['page'] ? +params['page'] : 1,
       limit: params['limit'] ? +params['limit'] : 10,
       search: params['search'] || undefined,
+      sortBy: params['sortBy'] || undefined,
+      sortOrder: params['sortOrder'] as 'asc' | 'desc' || undefined,
     })),
     switchMap((params) =>
       this.productsService.getProducts(params).pipe(
         map((response): ProductsState => ({
-          products: response.data,
+          products: response.products,
           loading: false,
           error: null,
-          totalRecords: response.pagination.total,
-          page: response.pagination.page,
-          rows: response.pagination.limit,
+          totalRecords: response.total,
+          page: params.page ?? 1,
+          rows: response.limit,
           search: params.search || '',
+          sortBy: params.sortBy || '',
+          sortOrder: params.sortOrder || 'asc',
         })),
         startWith<ProductsState>({
           products: [],
@@ -65,6 +72,8 @@ export class ProductsTableComponent implements OnInit {
           page: params.page ?? 1,
           rows: params.limit ?? 10,
           search: params.search || '',
+          sortBy: params.sortBy || '',
+          sortOrder: params.sortOrder || 'asc',
         }),
         catchError((err): import('rxjs').Observable<ProductsState> => {
           console.error('Failed to load products', err);
@@ -76,6 +85,8 @@ export class ProductsTableComponent implements OnInit {
             page: params.page ?? 1,
             rows: params.limit ?? 10,
             search: params.search || '',
+            sortBy: params.sortBy || '',
+            sortOrder: params.sortOrder || 'asc',
           });
         })
       )
@@ -93,6 +104,10 @@ export class ProductsTableComponent implements OnInit {
 
   onSearch(search: string): void {
     this.updateQueryParams({ search: search || null, page: 1 });
+  }
+
+  onSort(event: SortEvent): void {
+    this.updateQueryParams({ sortBy: event.field, sortOrder: event.order, page: 1 });
   }
 
   private updateQueryParams(params: Record<string, string | number | null>): void {

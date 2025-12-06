@@ -8,27 +8,31 @@ import { ProductsResponse, ProductsQueryParams } from '../models/product.model';
 })
 export class ProductsService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'https://fakeapi.net/products';
+  private readonly baseUrl = 'https://dummyjson.com/products';
 
   getProducts(params?: ProductsQueryParams): Observable<ProductsResponse> {
     let httpParams = new HttpParams();
+    const limit = params?.limit ?? 10;
+    const page = params?.page ?? 1;
+    const skip = (page - 1) * limit;
 
-    if (params?.page) {
-      httpParams = httpParams.set('page', params.page.toString());
+    httpParams = httpParams.set('limit', limit.toString());
+    httpParams = httpParams.set('skip', skip.toString());
+
+    if (params?.sortBy) {
+      httpParams = httpParams.set('sortBy', params.sortBy);
+      httpParams = httpParams.set('order', params.sortOrder ?? 'asc');
     }
-    if (params?.limit) {
-      httpParams = httpParams.set('limit', params.limit.toString());
-    }
-    if (params?.category) {
-      httpParams = httpParams.set('category', params.category);
-    }
+
+    // Use search endpoint if search query is provided
+    const url = params?.search
+      ? `${this.baseUrl}/search`
+      : this.baseUrl;
+
     if (params?.search) {
-      httpParams = httpParams.set('search', params.search);
-    }
-    if (params?.price) {
-      httpParams = httpParams.set('price', JSON.stringify(params.price));
+      httpParams = httpParams.set('q', params.search);
     }
 
-    return this.http.get<ProductsResponse>(this.apiUrl, { params: httpParams });
+    return this.http.get<ProductsResponse>(url, { params: httpParams });
   }
 }

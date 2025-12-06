@@ -25,7 +25,10 @@
     [totalRecords]="state.totalRecords"
     [lazy]="true"
     [first]="(state.page - 1) * state.rows"
+    [sortField]="state.sortBy"
+    [sortOrder]="state.sortOrder"
     (pageChange)="onPageChange($event)"
+    (sortChange)="onSort($event)"
   />
 </div>
 }
