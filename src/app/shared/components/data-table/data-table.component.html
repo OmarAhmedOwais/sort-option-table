@@ -5,6 +5,10 @@
   [rowsPerPageOptions]="rowsPerPageOptions()"
   [loading]="loading()"
   [tableStyle]="{ 'min-width': '60rem' }"
+  [totalRecords]="totalRecords()"
+  [lazy]="lazy()"
+  [first]="first()"
+  (onPage)="onPageChange($event)"
 >
   <ng-template #header>
     <tr>

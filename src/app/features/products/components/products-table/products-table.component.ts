@@ -1,14 +1,17 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ProductsService } from '../../services/products.service';
-import { Observable, of, startWith, catchError, map } from 'rxjs';
-import { Product } from '../../models/product.model';
+import { BehaviorSubject, of, switchMap, catchError, map, startWith } from 'rxjs';
+import { Product, ProductsQueryParams } from '../../models/product.model';
 import { DataTableComponent, TableColumn } from '../../../../shared';
 
 interface ProductsState {
   products: Product[];
   loading: boolean;
   error: string | null;
+  totalRecords: number;
+  page: number;
+  rows: number;
 }
 
 @Component({
@@ -18,7 +21,7 @@ interface ProductsState {
   templateUrl: './products-table.component.html',
 })
 export class ProductsTableComponent {
-  private productsService = inject(ProductsService);
+  private readonly productsService = inject(ProductsService);
 
   readonly columns: TableColumn[] = [
     { field: 'id', header: 'ID', sortable: true, width: '10%' },
@@ -29,12 +32,43 @@ export class ProductsTableComponent {
     { field: 'image', header: 'Image', sortable: false, width: '25%', type: 'image' },
   ];
 
-  readonly productsState$: Observable<ProductsState> = this.productsService.getProducts().pipe(
-    map((products) => ({ products, loading: false, error: null })),
-    startWith({ products: [], loading: true, error: null }),
-    catchError((err) => {
-      console.error('Failed to load products', err);
-      return of({ products: [], loading: false, error: 'Failed to load products' });
-    })
+  private readonly queryParams$ = new BehaviorSubject<ProductsQueryParams>({ page: 1, limit: 10 });
+
+  readonly productsState$ = this.queryParams$.pipe(
+    switchMap((params) =>
+      this.productsService.getProducts(params).pipe(
+        map((response): ProductsState => ({
+          products: response.data,
+          loading: false,
+          error: null,
+          totalRecords: response.pagination.total,
+          page: response.pagination.page,
+          rows: response.pagination.limit,
+        })),
+        startWith<ProductsState>({
+          products: [],
+          loading: true,
+          error: null,
+          totalRecords: 0,
+          page: params.page ?? 1,
+          rows: params.limit ?? 10,
+        }),
+        catchError((err): import('rxjs').Observable<ProductsState> => {
+          console.error('Failed to load products', err);
+          return of({
+            products: [],
+            loading: false,
+            error: 'Failed to load products',
+            totalRecords: 0,
+            page: params.page ?? 1,
+            rows: params.limit ?? 10,
+          });
+        })
+      )
+    )
   );
+
+  onPageChange(event: { page: number; rows: number }): void {
+    this.queryParams$.next({ page: event.page, limit: event.rows });
+  }
 }

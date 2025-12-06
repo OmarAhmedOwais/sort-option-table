@@ -11,8 +11,12 @@
     [columns]="columns"
     [loading]="state.loading"
     [paginator]="true"
-    [rows]="5"
+    [rows]="state.rows"
     [rowsPerPageOptions]="[5, 10, 20]"
+    [totalRecords]="state.totalRecords"
+    [lazy]="true"
+    [first]="(state.page - 1) * state.rows"
+    (pageChange)="onPageChange($event)"
   />
 </div>
 }
