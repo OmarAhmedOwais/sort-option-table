@@ -1,0 +1,11 @@
+<p-iconfield iconPosition="left">
+  <p-inputicon styleClass="pi pi-search"></p-inputicon>
+  <input
+    pInputText
+    type="text"
+    [value]="value()"
+    (input)="onInput($event)"
+    [placeholder]="placeholder()"
+    class="pl-8"
+  />
+</p-iconfield>

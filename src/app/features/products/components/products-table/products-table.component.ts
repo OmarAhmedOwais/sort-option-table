@@ -1,9 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 import { ProductsService } from '../../services/products.service';
-import { BehaviorSubject, of, switchMap, catchError, map, startWith } from 'rxjs';
+import { of, switchMap, catchError, map, startWith, debounceTime, distinctUntilChanged } from 'rxjs';
 import { Product, ProductsQueryParams } from '../../models/product.model';
-import { DataTableComponent, TableColumn } from '../../../../shared';
+import { DataTableComponent, SearchInputComponent, TableColumn } from '../../../../shared';
 
 interface ProductsState {
   products: Product[];
@@ -12,16 +13,19 @@ interface ProductsState {
   totalRecords: number;
   page: number;
   rows: number;
+  search: string;
 }
 
 @Component({
   selector: 'app-products-table',
   standalone: true,
-  imports: [CommonModule, DataTableComponent],
+  imports: [CommonModule, DataTableComponent, SearchInputComponent],
   templateUrl: './products-table.component.html',
 })
-export class ProductsTableComponent {
+export class ProductsTableComponent implements OnInit {
   private readonly productsService = inject(ProductsService);
+  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   readonly columns: TableColumn[] = [
     { field: 'id', header: 'ID', sortable: true, width: '10%' },
@@ -32,9 +36,16 @@ export class ProductsTableComponent {
     { field: 'image', header: 'Image', sortable: false, width: '25%', type: 'image' },
   ];
 
-  private readonly queryParams$ = new BehaviorSubject<ProductsQueryParams>({ page: 1, limit: 10 });
+  initialSearch = '';
 
-  readonly productsState$ = this.queryParams$.pipe(
+  readonly productsState$ = this.route.queryParams.pipe(
+    debounceTime(300),
+    distinctUntilChanged((prev, curr) => JSON.stringify(prev) === JSON.stringify(curr)),
+    map((params): ProductsQueryParams => ({
+      page: params['page'] ? +params['page'] : 1,
+      limit: params['limit'] ? +params['limit'] : 10,
+      search: params['search'] || undefined,
+    })),
     switchMap((params) =>
       this.productsService.getProducts(params).pipe(
         map((response): ProductsState => ({
@@ -44,6 +55,7 @@ export class ProductsTableComponent {
           totalRecords: response.pagination.total,
           page: response.pagination.page,
           rows: response.pagination.limit,
+          search: params.search || '',
         })),
         startWith<ProductsState>({
           products: [],
@@ -52,6 +64,7 @@ export class ProductsTableComponent {
           totalRecords: 0,
           page: params.page ?? 1,
           rows: params.limit ?? 10,
+          search: params.search || '',
         }),
         catchError((err): import('rxjs').Observable<ProductsState> => {
           console.error('Failed to load products', err);
@@ -62,13 +75,31 @@ export class ProductsTableComponent {
             totalRecords: 0,
             page: params.page ?? 1,
             rows: params.limit ?? 10,
+            search: params.search || '',
           });
         })
       )
     )
   );
 
+  ngOnInit(): void {
+    const params = this.route.snapshot.queryParams;
+    this.initialSearch = params['search'] || '';
+  }
+
   onPageChange(event: { page: number; rows: number }): void {
-    this.queryParams$.next({ page: event.page, limit: event.rows });
+    this.updateQueryParams({ page: event.page, limit: event.rows });
+  }
+
+  onSearch(search: string): void {
+    this.updateQueryParams({ search: search || null, page: 1 });
+  }
+
+  private updateQueryParams(params: Record<string, string | number | null>): void {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: params,
+      queryParamsHandling: 'merge',
+    });
   }
 }

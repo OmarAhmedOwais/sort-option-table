@@ -6,6 +6,15 @@
   <p class="text-red-500">{{ state.error }}</p>
   }
 
+  <div class="flex justify-end mb-4">
+    <app-search-input
+      [placeholder]="'Search products...'"
+      [debounceTime]="300"
+      [value]="state.search"
+      (searchChange)="onSearch($event)"
+    />
+  </div>
+
   <app-data-table
     [data]="state.products"
     [columns]="columns"
