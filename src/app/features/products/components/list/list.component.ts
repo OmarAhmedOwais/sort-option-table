@@ -17,7 +17,7 @@ import { DataTableComponent, SearchInputComponent, SortEvent } from '../../../..
   selector: 'app-products-table',
   standalone: true,
   imports: [CommonModule, DataTableComponent, SearchInputComponent],
-  templateUrl: './products-table.component.html',
+  templateUrl: './list.component.html',
 })
 export class ProductsTableComponent implements OnInit {
   private readonly productsService = inject(ProductsService);
